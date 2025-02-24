@@ -1,3 +1,10 @@
+# Clean Architecture - ASP.NET Core Web API
+
+## 📌 Overview
+This project follows **Clean Architecture** principles to build a scalable and maintainable **ASP.NET Core Web API**.
+
+## 📂 Solution Structure
+```
 📦 YourSolutionName
  ┣ 📂 src
  ┃ ┣ 📂 Application            # Business logic (Use Cases)
@@ -38,19 +45,16 @@
  ┣ 📄 README.md                # Documentation
  ┣ 📄 .gitignore               # Git Ignore
  ┣ 📄 docker-compose.yml        # Docker Config (Optional)
+```
 
+## 🛠️ Explanation of Each Layer
+### 1️⃣ Domain Layer (Core)
+- Contains **Entities, Enums, Value Objects**, and **Domain Events**.
+- Does **NOT** depend on any other layer.
+- Represents the core business logic.
 
-
-🛠️ Explanation of Each Layer
-1️⃣ Domain Layer (Core)
-Contains Entities, Enums, Value Objects, and Domain Events.
-Does NOT depend on any other layer.
-Represents the core business logic.
-✅ Example Product.cs (Domain Entity):
-
-csharp
-Copy
-Edit
+**Example `Product.cs` (Domain Entity):**
+```csharp
 public class Product
 {
     public int Id { get; private set; }
@@ -64,33 +68,21 @@ public class Product
         Price = price;
         Stock = stock;
     }
-
-    public void UpdateStock(int amount)
-    {
-        if (amount < 0) throw new InvalidOperationException("Stock cannot be negative");
-        Stock = amount;
-    }
 }
-2️⃣ Application Layer
-Contains CQRS Handlers, Interfaces, DTOs, and Use Cases.
-Implements business logic but does not know about infrastructure.
-Uses Dependency Injection.
-✅ Example CreateProductCommand.cs (CQRS - Command Handler):
+```
 
-csharp
-Copy
-Edit
+### 2️⃣ Application Layer
+- Contains **CQRS Handlers, Interfaces, DTOs, and Use Cases**.
+- Implements **business logic** but does not know about infrastructure.
+
+**Example `CreateProductCommand.cs` (CQRS - Command Handler):**
+```csharp
 public record CreateProductCommand(string Name, decimal Price, int Stock) : IRequest<int>;
 
 public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand, int>
 {
     private readonly IProductRepository _repository;
-
-    public CreateProductCommandHandler(IProductRepository repository)
-    {
-        _repository = repository;
-    }
-
+    public CreateProductCommandHandler(IProductRepository repository) => _repository = repository;
     public async Task<int> Handle(CreateProductCommand request, CancellationToken cancellationToken)
     {
         var product = new Product(request.Name, request.Price, request.Stock);
@@ -98,22 +90,17 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
         return product.Id;
     }
 }
-3️⃣ Infrastructure Layer
-Implements Repositories, Database Context, Authentication, and External APIs.
-Uses EF Core or any other persistence provider.
-✅ Example ProductRepository.cs (EF Core Repository):
+```
 
-csharp
-Copy
-Edit
+### 3️⃣ Infrastructure Layer
+- Implements **Repositories, Database Context, Authentication, and External APIs**.
+
+**Example `ProductRepository.cs` (EF Core Repository):**
+```csharp
 public class ProductRepository : IProductRepository
 {
     private readonly AppDbContext _context;
-
-    public ProductRepository(AppDbContext context)
-    {
-        _context = context;
-    }
+    public ProductRepository(AppDbContext context) => _context = context;
 
     public async Task<Product?> GetByIdAsync(int id) =>
         await _context.Products.FindAsync(id);
@@ -124,23 +111,19 @@ public class ProductRepository : IProductRepository
         await _context.SaveChangesAsync();
     }
 }
-4️⃣ WebAPI Layer
-The presentation layer containing Controllers, Middleware, and Filters.
-✅ Example ProductsController.cs:
+```
 
-csharp
-Copy
-Edit
+### 4️⃣ WebAPI Layer
+- The presentation layer containing **Controllers, Middleware, and Filters**.
+
+**Example `ProductsController.cs`:**
+```csharp
 [ApiController]
 [Route("api/products")]
 public class ProductsController : ControllerBase
 {
     private readonly IMediator _mediator;
-
-    public ProductsController(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
+    public ProductsController(IMediator mediator) => _mediator = mediator;
 
     [HttpPost]
     public async Task<IActionResult> CreateProduct([FromBody] CreateProductCommand command)
@@ -156,39 +139,45 @@ public class ProductsController : ControllerBase
         return product is not null ? Ok(product) : NotFound();
     }
 }
-5️⃣ Tests Layer
-Contains Unit Tests, Integration Tests, and API Tests.
-✅ Example ProductServiceTests.cs (Unit Test):
+```
 
-csharp
-Copy
-Edit
+### 5️⃣ Tests Layer
+- Contains **Unit Tests, Integration Tests**, and **API Tests**.
+
+**Example `ProductServiceTests.cs` (Unit Test):**
+```csharp
 public class ProductServiceTests
 {
     private readonly Mock<IProductRepository> _mockRepo;
     private readonly CreateProductCommandHandler _handler;
-
     public ProductServiceTests()
     {
         _mockRepo = new Mock<IProductRepository>();
         _handler = new CreateProductCommandHandler(_mockRepo.Object);
     }
-
     [Fact]
     public async Task CreateProduct_ShouldReturnProductId()
     {
-        // Arrange
         var command = new CreateProductCommand("Laptop", 999.99m, 10);
-
-        // Act
         var result = await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
         Assert.True(result > 0);
     }
 }
-🎯 Benefits of This Structure
-✅ Scalability → Easy to add new features without breaking existing ones.
-✅ Maintainability → Each layer is independent, making debugging and updates easier.
-✅ Testability → Supports unit and integration testing by following SOLID principles.
-✅ Separation of Concerns → Business logic, API, and data layers are well-separated.
+```
+
+## 🚀 Next Steps
+1️⃣ Set up **EF Core & Migrations**  
+2️⃣ Implement **CQRS with MediatR**  
+3️⃣ Add **JWT Authentication & Role-Based Authorization**  
+4️⃣ Write **Unit Tests & Integration Tests**  
+
+---
+
+### **🎯 Benefits of This Structure**
+✅ **Scalability** → Easy to add new features.  
+✅ **Maintainability** → Independent layers make debugging easy.  
+✅ **Testability** → Supports unit and integration testing.  
+✅ **Separation of Concerns** → Clean code structure.  
+
+🚀 Happy Coding! 🎯🔥
+
